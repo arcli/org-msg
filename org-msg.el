@@ -1479,24 +1479,25 @@ HTML emails."
 
 (defun org-msg-edit-mode-mu4e ()
   "Setup mu4e faces, addresses completion and run mu4e."
-  ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
-  ;; this will setup fcc (saving sent messages) and handle flags
-  ;; (e.g. replied to)
-  (add-hook 'message-send-hook
-	    (if (functionp #'mu4e~setup-fcc-message-sent-hook-fn)
-		#'mu4e~setup-fcc-message-sent-hook-fn
-	      (lambda ()
-		;; when in-reply-to was removed, remove references as well.
-		(when (eq mu4e-compose-type 'reply)
-		  (mu4e~remove-refs-maybe))
-		(when use-hard-newlines
-		  (mu4e-send-harden-newlines))
-		;; for safety, always save the draft before sending
-		(set-buffer-modified-p t)
-		(save-buffer)
-		(mu4e~compose-setup-fcc-maybe)
-		(widen)))
-	    nil t)
+  (unless (functionp #'mu4e--compose-after-send) ;; newer versions handle this in a hook
+    (add-hook 'message-send-hook
+	      ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
+	      ;; this will setup fcc (saving sent messages) and handle flags
+	      ;; (e.g. replied to)
+	      (if (functionp #'mu4e~setup-fcc-message-sent-hook-fn)
+		  #'mu4e~setup-fcc-message-sent-hook-fn
+		(lambda ()
+		  ;; when in-reply-to was removed, remove references as well.
+		  (when (eq mu4e-compose-type 'reply)
+		    (mu4e~remove-refs-maybe))
+		  (when use-hard-newlines
+		    (mu4e-send-harden-newlines))
+		  ;; for safety, always save the draft before sending
+		  (set-buffer-modified-p t)
+		  (save-buffer)
+		  (mu4e~compose-setup-fcc-maybe)
+		  (widen)))
+	      nil t))
   ;; when the message has been sent.
   (add-hook 'message-sent-hook
 	    (if (functionp #'mu4e~set-sent-handler-message-sent-hook-fn)
