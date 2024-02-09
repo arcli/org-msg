@@ -1472,11 +1472,6 @@ HTML emails."
 
 (defun org-msg-edit-mode-mu4e ()
   "Setup mu4e faces, addresses completion and run mu4e."
-  (mu4e~compose-remap-faces)
-  (unless (mu4e-running-p)
-    (mu4e~start))
-  (when mu4e-compose-complete-addresses
-    (mu4e~compose-setup-completion))
   ;; the following code is verbatim from mu4e-compose.el, `mu4e-compose-mode'
   ;; this will setup fcc (saving sent messages) and handle flags
   ;; (e.g. replied to)
@@ -1503,6 +1498,13 @@ HTML emails."
 		(setq mu4e-sent-func 'mu4e-sent-handler)
 		(mu4e~proc-sent (buffer-file-name))))
 	    nil t))
+  ;; use the correct functions for different versions of mu4e
+  (flet ((run-one (&rest funcs) (funcall (seq-find (lambda (f) (functionp f)) funcs))))
+    (run-one #'mu4e--compose-remap-faces #'mu4e~compose-remap-faces)
+    (unless (mu4e-running-p)
+      (run-one #'mu4e--start #'mu4e~start))
+    (when mu4e-compose-complete-addresses
+      (run-one #'mu4e--compose-setup-completion #'mu4e~compose-setup-completion)))
 
 (defalias 'org-msg-edit-kill-buffer-mu4e 'mu4e-message-kill-buffer)
 
